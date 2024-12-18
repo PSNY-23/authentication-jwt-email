@@ -1,7 +1,7 @@
+import nodemailer from "nodemailer";
+import ejs from "ejs";
 import dotenv from "dotenv";
 dotenv.config();
-
-import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
   service: "gmail",
@@ -15,22 +15,24 @@ const transporter = nodemailer.createTransport({
 });
 
 // Send the email
-function emailSender(to, sub, html) {
-  transporter.sendMail(
-    {
-      from: "growmorequote@gmail.com",
-      to: to,
-      subject: sub,
-      html: html,
-    },
-    (error, info) => {
-      if (error) {
-        console.log("Error sending email:", error);
-      } else {
-        console.log("Email sent: " + info.response);
-      }
-    }
-  );
+
+async function emailSender({ to, subject, ejsPath, ejsDataObject }) {
+  const renderedHTML = await ejs.renderFile(ejsPath, ejsDataObject);
+
+  const mailOptions = {
+    from: process.env.SENDER_EMAIL,
+    to: to,
+    subject: subject,
+    html: renderedHTML,
+  };
+  try {
+    const info = await transporter.sendMail(mailOptions);
+    console.log("Email sent: " + info.response);
+    return { message: "Email sent", response: info.response };
+  } catch (error) {
+    console.error("Error sending email:", error);
+    return { message: "Error sending email", error };
+  }
 }
 
 export default emailSender;
